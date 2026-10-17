@@ -5,6 +5,7 @@ public class MainMenuManager : MonoBehaviour
 {
     [Header("UI Elements")]
     public GameObject quitButton;
+    public string gameSceneName = "Main";
 
     void Start()
     {
@@ -18,7 +19,15 @@ public class MainMenuManager : MonoBehaviour
 
     public void PlayGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        SceneTransition fader = FindObjectOfType<SceneTransition>();
+        if (fader != null)
+        {
+            fader.LoadSceneWithFade(gameSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(gameSceneName);
+        }
     }
 
     public void QuitGame()

@@ -9,21 +9,27 @@ public class MainMenuCamera : MonoBehaviour
     public float bobSpeed = 3f;
     public float bobAmount = 0.2f;
 
-    private float defaultPosY;
+    [Header("Swaying")]
+    public float swayAmount = 0.15f;
+
+    private Vector3 basePosition;
     private float timer = 0f;
 
     void Start()
     {
-        defaultPosY = transform.position.y;
+        basePosition = transform.position;
     }
 
     void Update()
     {
-        transform.position += transform.forward * walkSpeed * Time.deltaTime;
+        basePosition += transform.forward * walkSpeed * Time.deltaTime;
 
         timer += Time.deltaTime * bobSpeed;
-        float newY = defaultPosY + Mathf.Sin(timer) * bobAmount;
 
-        transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+        float newY = Mathf.Sin(timer) * bobAmount;
+
+        float newX = Mathf.Cos(timer / 2f) * swayAmount;
+
+        transform.position = basePosition + (transform.up * newY) + (transform.right * newX);
     }
 }

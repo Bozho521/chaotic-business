@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class TimerMinigame : MonoBehaviour
 {
@@ -35,6 +36,9 @@ public class TimerMinigame : MonoBehaviour
     public float shakeThreshold = 3f;    
     public float explodeThreshold = 5f;  
     public float shakeIntensity = 0.05f;
+
+    [Header("Game Over Logic")]
+    public string gameOverSceneName = "GameOver";
 
     private float currentTime;
     private bool isGameOver = false;
@@ -217,6 +221,17 @@ public class TimerMinigame : MonoBehaviour
         
         UpdateButtonVisual(false);
         Debug.Log("<color=red>ERROR. Time expired</color>");
+        
+        SceneTransition fader = FindObjectOfType<SceneTransition>();
+        if (fader != null)
+        {
+            fader.LoadSceneWithFade(gameOverSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(gameOverSceneName);
+        }
+        
     }
 
     private void TriggerExplosion()

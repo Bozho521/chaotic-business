@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class ValveMinigame : MonoBehaviour
 {
@@ -25,6 +26,9 @@ public class ValveMinigame : MonoBehaviour
     public float safeAngle = 45f;  
     public float dangerAngle = -45f;
     public float arrowSpeed = 5f;
+
+    [Header("Game Over Logic")]
+    public string gameOverSceneName = "GameOver";
 
     private int[] targetSteps = new int[3]; 
     private float[] currentVisualAngles = new float[3];
@@ -195,6 +199,7 @@ public class ValveMinigame : MonoBehaviour
         {
             int difference = Mathf.Abs(currentDigits[i] - targetDigits[i]);
             int shortestPath = Mathf.Min(difference, 10 - difference);
+
             totalError += shortestPath;
         }
 
@@ -224,5 +229,14 @@ public class ValveMinigame : MonoBehaviour
     {
         isFailed = true;
         Debug.Log("<color=red>FAIL</color>");
+        SceneTransition fader = FindObjectOfType<SceneTransition>();
+        if (fader != null)
+        {
+            fader.LoadSceneWithFade(gameOverSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(gameOverSceneName);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,14 +13,13 @@ public class FixingMinigame : MonoBehaviour
     public SpriteRenderer playerShapeDisplay;
     public Color holeTint = new Color(0.2f, 0.2f, 0.2f, 1f);
 
-    [Header("Shape Sprites ")]
+    [Header("Shape Sprites")]
     public Sprite[] triangleSprites;
     public Sprite[] squareSprites;
     public Sprite[] sphereSprites;
 
     [Header("Mechanics")]
     public float timeToRepair = 3f; 
-    public Transform progressBar; 
     
     private int[] holesPerStage = { 2, 4, 6 };
     private int currentStageIndex = 0;
@@ -27,7 +27,7 @@ public class FixingMinigame : MonoBehaviour
     private int currentShapeIndex = 0; 
     private int currentRotIndex = 0;
 
-    private float repairProgress = 0f;      //questionable
+    private float repairProgress = 0f;      
     private bool isPlaying = false;
     private bool isCompleted = false;
 
@@ -36,6 +36,7 @@ public class FixingMinigame : MonoBehaviour
         public SpriteRenderer renderer;
         public int shapeGroup;
         public bool isFixed;
+        public Vector3 originalScale;
     }
     
     private List<HoleData> activeHoles = new List<HoleData>();
@@ -57,7 +58,6 @@ public class FixingMinigame : MonoBehaviour
             isPlaying = false;
             repairProgress = 0f; 
             ResetHoleColors();
-            UpdateProgressBar();
         }
     }
 
@@ -75,7 +75,6 @@ public class FixingMinigame : MonoBehaviour
     private void GenerateStage()
     {
         repairProgress = 0f;
-        UpdateProgressBar();
         activeHoles.Clear();
         holeBeingRepaired = null;
 
@@ -112,7 +111,8 @@ public class FixingMinigame : MonoBehaviour
             activeHoles.Add(new HoleData {
                 renderer = targetRenderer,
                 shapeGroup = shapeCombo.x,
-                isFixed = false
+                isFixed = false,
+                originalScale = targetRenderer.transform.localScale
             });
         }
 
@@ -203,8 +203,6 @@ public class FixingMinigame : MonoBehaviour
             
             ResetHoleColors();
         }
-
-        UpdateProgressBar();
     }
 
     private HoleData GetMatchingUnfixedHole()
@@ -214,10 +212,8 @@ public class FixingMinigame : MonoBehaviour
             if (hole.isFixed) continue;
 
             bool exactSpriteMatch = (playerShapeDisplay.sprite != null && playerShapeDisplay.sprite == hole.renderer.sprite);
-            
-            bool sphereFreebie = (currentShapeIndex == 2 && hole.shapeGroup == 2); //questionable for spheres?
 
-            if (exactSpriteMatch || sphereFreebie)
+            if (exactSpriteMatch)
             {
                 return hole;
             }
@@ -231,6 +227,36 @@ public class FixingMinigame : MonoBehaviour
         hole.renderer.color = Color.white;
         Debug.Log("<color=green>Patched!</color>");
 
+        StartCoroutine(PopAndCheckStage(hole));
+    }
+
+    private IEnumerator PopAndCheckStage(HoleData hole)
+    {
+        Transform target = hole.renderer.transform;
+        Vector3 origScale = hole.originalScale;
+        Vector3 popScale = origScale * 1.5f;
+        float popDuration = 0.15f;
+        float elapsed = 0f;
+
+        while (elapsed < popDuration)
+        {
+            target.localScale = Vector3.Lerp(origScale, popScale, elapsed / popDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < popDuration)
+        {
+            target.localScale = Vector3.Lerp(popScale, origScale, elapsed / popDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        target.localScale = origScale;
+        
+        yield return new WaitForSeconds(0.2f);
+        
         CheckStageCompletion();
     }
 
@@ -271,15 +297,6 @@ public class FixingMinigame : MonoBehaviour
         Debug.Log("<color=green>ALL STAGES CLEARED!</color>");
     }
 
-    private void UpdateProgressBar()
-    {
-        if (progressBar != null)
-        {
-            float fillAmount = repairProgress / timeToRepair;
-            progressBar.localScale = new Vector3(fillAmount, progressBar.localScale.y, progressBar.localScale.z);
-        }
-    }
-    
     private int GetMaxRotations(int shapeIndex)
     {
         if (shapeIndex == 0 && triangleSprites != null) return triangleSprites.Length;

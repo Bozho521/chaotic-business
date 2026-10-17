@@ -6,16 +6,20 @@ using UnityEngine.SceneManagement;
 public class SceneTransition : MonoBehaviour
 {
     [Header("Fade Settings")]
+    public Image fadeImage;
     public float fadeSpeed = 1.5f;
+
     void Start()
     {
         if (fadeImage != null)
         {
             fadeImage.color = new Color(0f, 0f, 0f, 1f);
             fadeImage.gameObject.SetActive(true);
+            
             StartCoroutine(FadeIn());
         }
     }
+
     public void LoadSceneWithFade(string sceneName)
     {
         if (fadeImage != null)
@@ -29,6 +33,7 @@ public class SceneTransition : MonoBehaviour
         }
     }
 
+    private IEnumerator FadeIn()
     {
         float alpha = 1f;
         while (alpha > 0f)
@@ -42,6 +47,7 @@ public class SceneTransition : MonoBehaviour
 
     private IEnumerator FadeOut(string sceneName)
     {
+        float alpha = 0f;
         while (alpha < 1f)
         {
             alpha += Time.deltaTime * fadeSpeed;

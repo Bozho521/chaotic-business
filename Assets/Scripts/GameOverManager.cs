@@ -7,14 +7,35 @@ public class GameOverManager : MonoBehaviour
     public string gameSceneName = "Main";
     public string mainMenuSceneName = "MainMenu";
     
+    [Header("Idle Timeout")]
+    public float idleTimeout = 30f;
+    
+    private float timer = 0f;
+    private bool isTransitioning = false;
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
+    void Update()
+    {
+        if (isTransitioning) return;
+
+        timer += Time.deltaTime;
+
+        if (timer >= idleTimeout)
+        {
+            LoadMainMenu();
+        }
+    }
+
     public void RestartGame()
     {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
         SceneTransition fader = FindObjectOfType<SceneTransition>();
         if (fader != null)
         {
@@ -28,6 +49,9 @@ public class GameOverManager : MonoBehaviour
 
     public void LoadMainMenu()
     {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
         SceneTransition fader = FindObjectOfType<SceneTransition>();
         if (fader != null)
         {

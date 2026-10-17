@@ -7,6 +7,10 @@ public class ValveMinigame : MonoBehaviour
     [Header("Game Settings")]
     public MiniGameType myGameType = MiniGameType.ValveMinigame;
     
+    [Header("Dialogue")]
+    [TextArea(2, 4)]
+    public string entryMessage;
+
     [Header("Sprites")]
     public Transform[] valveModels = new Transform[3]; 
     public Vector3 rotationAxis = new Vector3(0, 0, 1); 
@@ -45,6 +49,9 @@ public class ValveMinigame : MonoBehaviour
     private bool isFailed = false;
     
     private float targetArrowAngle;
+    
+    private bool wasPlaying = false;
+    private bool hasPlayedMessage = false;
 
     void Start()
     {
@@ -66,7 +73,25 @@ public class ValveMinigame : MonoBehaviour
 
     void Update()
     {
-        if (MainPlayerController.IsPlayingMiniGame && MainPlayerController.ActiveGameType == myGameType)
+        bool isCurrentlyPlaying = MainPlayerController.IsPlayingMiniGame && MainPlayerController.ActiveGameType == myGameType;
+
+        if (isCurrentlyPlaying && !wasPlaying)
+        {
+            wasPlaying = true;
+            
+            if (!hasPlayedMessage && !string.IsNullOrEmpty(entryMessage))
+            {
+                if (DialogueManager.Instance != null) DialogueManager.Instance.ShowMessage(entryMessage);
+                hasPlayedMessage = true;
+            }
+        }
+        else if (!isCurrentlyPlaying && wasPlaying)
+        {
+            wasPlaying = false;
+            hasPlayedMessage = false;
+        }
+
+        if (isCurrentlyPlaying)
         {
             if (!isCompleted && !isFailed) 
             {

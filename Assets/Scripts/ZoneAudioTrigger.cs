@@ -1,10 +1,19 @@
 using UnityEngine;
 
+[System.Serializable]
+public class AudioDialogueEvent
+{
+    public AudioClip clip;
+    
+    [TextArea(2, 4)]
+    public string[] possibleMessages;
+}
+
 [RequireComponent(typeof(AudioSource))]
 public class ZoneAudioTrigger : MonoBehaviour
 {
-    [Header("Audio")]
-    public AudioClip[] sounds;
+    [Header("Audio & Dialogue")]
+    public AudioDialogueEvent[] audioEvents;
     
     [Header("Cooldown")]
     public float minCooldown = 5f;
@@ -33,29 +42,45 @@ public class ZoneAudioTrigger : MonoBehaviour
 
             if (cooldownTimer <= 0f)
             {
-                PlayRandomSound();
+                PlayRandomSoundAndDialogue();
             }
         }
     }
 
-    private void PlayRandomSound()
+    private void PlayRandomSoundAndDialogue()
     {
-        if (sounds == null || sounds.Length == 0) return;
+        if (audioEvents == null || audioEvents.Length == 0) return;
 
         int randomIndex = 0;
         
-        if (sounds.Length > 1)
+        if (audioEvents.Length > 1)
         {
             do
             {
-                randomIndex = Random.Range(0, sounds.Length);
+                randomIndex = Random.Range(0, audioEvents.Length);
             } 
             while (randomIndex == lastPlayedIndex);
         }
 
         lastPlayedIndex = randomIndex;
-        audioSource.clip = sounds[randomIndex];
-        audioSource.Play();
+        AudioDialogueEvent selectedEvent = audioEvents[randomIndex];
+
+        if (selectedEvent.clip != null)
+        {
+            audioSource.clip = selectedEvent.clip;
+            audioSource.Play();
+        }
+
+        if (selectedEvent.possibleMessages != null && selectedEvent.possibleMessages.Length > 0)
+        {
+            int randomMsgIndex = Random.Range(0, selectedEvent.possibleMessages.Length);
+            string chosenMessage = selectedEvent.possibleMessages[randomMsgIndex];
+
+            if (!string.IsNullOrEmpty(chosenMessage) && DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.ShowMessage(chosenMessage);
+            }
+        }
 
         cooldownTimer = Random.Range(minCooldown, maxCooldown);
     }

@@ -8,6 +8,10 @@ public class TimerMinigame : MonoBehaviour
     [Header("Game Settings")]
     public MiniGameType myGameType = MiniGameType.TimerGame;
     
+    [Header("Dialogue")]
+    [TextArea(2, 4)]
+    public string entryMessage;
+
     [Header("Timer Settings")]
     public float maxTime = 60f;
     public float timeDrainRate = 1f;
@@ -46,6 +50,7 @@ public class TimerMinigame : MonoBehaviour
     
     private int lastDecade; 
     private bool wasPlaying = false;
+    private bool hasPlayedMessage = false;
     
     private Vector3 initialTankPos;
     private int lastFillLogSecond;
@@ -80,12 +85,19 @@ public class TimerMinigame : MonoBehaviour
 
         if (isCurrentlyPlaying && !wasPlaying)
         {
-            Debug.Log("<color=cyan>Hold Space to charge.</color>");
             wasPlaying = true;
+            Debug.Log("<color=cyan>Hold Space to charge.</color>");
+            
+            if (!hasPlayedMessage && !string.IsNullOrEmpty(entryMessage))
+            {
+                if (DialogueManager.Instance != null) DialogueManager.Instance.ShowMessage(entryMessage);
+                hasPlayedMessage = true;
+            }
         }
         else if (!isCurrentlyPlaying && wasPlaying)
         {
             wasPlaying = false;
+            hasPlayedMessage = false;
             UpdateButtonVisual(false); 
         }
 

@@ -8,6 +8,10 @@ public class FixingMinigame : MonoBehaviour
     [Header("Game Settings")]
     public MiniGameType myGameType = MiniGameType.FixingGame;
     
+    [Header("Dialogue")]
+    [TextArea(2, 4)]
+    public string entryMessage;
+
     [Header("Visuals")]
     public SpriteRenderer[] holeLocations; 
     public SpriteRenderer playerShapeDisplay;
@@ -30,6 +34,7 @@ public class FixingMinigame : MonoBehaviour
     private float repairProgress = 0f;      
     private bool isPlaying = false;
     private bool isCompleted = false;
+    private bool isInitialized = false;
 
     private class HoleData 
     {
@@ -46,7 +51,10 @@ public class FixingMinigame : MonoBehaviour
     {
         if (MainPlayerController.IsPlayingMiniGame && MainPlayerController.ActiveGameType == myGameType)
         {
-            if (!isPlaying) StartMinigame();
+            if (!isPlaying) 
+            {
+                ResumeMinigame();
+            }
             else if (!isCompleted) 
             {
                 HandleInputs();
@@ -55,21 +63,46 @@ public class FixingMinigame : MonoBehaviour
         }
         else
         {
-            isPlaying = false;
-            repairProgress = 0f; 
-            ResetHoleColors();
+            if (isPlaying)
+            {
+                PauseMinigame();
+            }
         }
     }
 
-    private void StartMinigame()
+    private void ResumeMinigame()
     {
         isPlaying = true;
-        isCompleted = false;
-        currentStageIndex = 0;
         
-        if (playerShapeDisplay != null) playerShapeDisplay.gameObject.SetActive(true);
+        if (playerShapeDisplay != null && !isCompleted) 
+        {
+            playerShapeDisplay.gameObject.SetActive(true);
+        }
 
-        GenerateStage();
+        if (!isInitialized)
+        {
+            if (!string.IsNullOrEmpty(entryMessage) && DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.ShowMessage(entryMessage);
+            }
+
+            isInitialized = true;
+            isCompleted = false;
+            currentStageIndex = 0;
+            GenerateStage();
+        }
+    }
+
+    private void PauseMinigame()
+    {
+        isPlaying = false;
+        repairProgress = 0f; 
+        ResetHoleColors();
+        
+        if (playerShapeDisplay != null) 
+        {
+            playerShapeDisplay.gameObject.SetActive(false);
+        }
     }
 
     private void GenerateStage()
@@ -106,6 +139,7 @@ public class FixingMinigame : MonoBehaviour
             SpriteRenderer targetRenderer = holeLocations[locIndex];
             targetRenderer.gameObject.SetActive(true);
             targetRenderer.sprite = GetShapeSprite(shapeCombo.x, shapeCombo.y);
+            
             targetRenderer.color = holeTint;
 
             activeHoles.Add(new HoleData {
@@ -234,7 +268,9 @@ public class FixingMinigame : MonoBehaviour
     {
         Transform target = hole.renderer.transform;
         Vector3 origScale = hole.originalScale;
+        
         Vector3 popScale = origScale * 1.5f;
+        
         float popDuration = 0.15f;
         float elapsed = 0f;
 

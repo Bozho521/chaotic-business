@@ -4,10 +4,11 @@ using UnityEngine.InputSystem;
 public class CameraController : MonoBehaviour
 {
     public Transform originalPosition;
-    public Transform monitorZoomPosition;
     public float transitionSpeed = 3f;
     public float swayAmount = 0.5f;
     public LayerMask monitorLayer;
+
+    public static bool IsPlayingMiniGame = false;
 
     private enum CameraState { Environment, Screen, Transitioning }
     private CameraState currentState = CameraState.Environment;
@@ -53,7 +54,15 @@ public class CameraController : MonoBehaviour
 
         if (transitionProgress >= 1f)
         {
-            currentState = (targetPos == monitorZoomPosition.position) ? CameraState.Screen : CameraState.Environment;
+            if (targetPos != originalPosition.position)
+            {
+                currentState = CameraState.Screen;
+                IsPlayingMiniGame = true;
+            }
+            else
+            {
+                currentState = CameraState.Environment;
+            }
         }
     }
 
@@ -71,7 +80,12 @@ public class CameraController : MonoBehaviour
             
             if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, monitorLayer))
             {
-                StartTransition(monitorZoomPosition);
+                MonitorTarget clickedMonitor = hit.collider.GetComponent<MonitorTarget>();
+                
+                if (clickedMonitor != null && clickedMonitor.zoomPosition != null)
+                {
+                    StartTransition(clickedMonitor.zoomPosition);
+                }
             }
         }
     }
@@ -80,6 +94,7 @@ public class CameraController : MonoBehaviour
     {
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
+            IsPlayingMiniGame = false;
             StartTransition(originalPosition);
         }
     }

@@ -40,7 +40,10 @@ public class MainPlayerController : MonoBehaviour
 
         if (IsPlayingMiniGame)
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            bool pressedEscape = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+            bool pressedRMB = Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
+
+            if (pressedEscape || pressedRMB)
             {
                 Debug.Log($"<color=yellow>--- EXITING MINIGAME: {ActiveGameType} ---</color>");
                 

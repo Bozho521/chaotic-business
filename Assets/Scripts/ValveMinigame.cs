@@ -1,22 +1,37 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class ValveMinigame : MonoBehaviour
 {
+    public static float CurrentPressureRatio { get; private set; } = 0f;
+
     [Header("Game Settings")]
     public MiniGameType myGameType = MiniGameType.ValveMinigame;
     
-    [Header("Dialogue")]
-    [TextArea(2, 4)]
-    public string entryMessage;
+    [Header("Dialogue - First Time")]
+    [TextArea(2, 3)] public string entryMessage;
+    [TextArea(2, 3)] public string warning30s;
+    [TextArea(2, 3)] public string warning60s;
+    [TextArea(2, 3)] public string warning80s;
+    [TextArea(2, 3)] public string warning110s;
 
-    [Header("Sprites")]
+    [Header("Dialogue - Repeats")]
+    [TextArea(2, 3)] public string repeatWarning30s;
+    [TextArea(2, 3)] public string repeatWarning60s;
+    [TextArea(2, 3)] public string repeatWarning80s;
+    [TextArea(2, 3)] public string repeatWarning110s;
+
+    [Header("Pressure Mechanics")]
+    public float timeToExplode = 120f; 
+    public float restartDelay = 60f;
+    public float autoSabotageInterval = 8f; 
+
+    [Header("Sprites & Models")]
     public Transform[] valveModels = new Transform[3]; 
     public Vector3 rotationAxis = new Vector3(0, 0, 1); 
     public float rotationStep = 36f; 
-
-    [Header("Rotation Settings")]
     public float rotationSpeed = 150f; 
     public float holdRepeatRate = 0.15f; 
 
@@ -34,24 +49,27 @@ public class ValveMinigame : MonoBehaviour
     [Header("Game Over Logic")]
     public string gameOverSceneName = "GameOver";
 
+    private bool isSystemActive = false; 
+    private int completionCount = 0;
+    private float pressureTimer = 0f;
+    private float sabotageTimer = 0f;
+    private int lastLoggedSecond = -1;
+
+    private bool w30, w60, w80, w110;
+
     private int[] targetSteps = new int[3]; 
     private float[] currentVisualAngles = new float[3];
-    
     private Quaternion[] initialRotations = new Quaternion[3];
     private Quaternion initialArrowRotation; 
-    
     private float[] inputTimers = new float[3];
-
     private int[] currentDigits = new int[3];
     private int[] targetDigits = new int[3];
     
-    private bool isCompleted = false;
     private bool isFailed = false;
-    
     private float targetArrowAngle;
     
     private bool wasPlaying = false;
-    private bool hasPlayedMessage = false;
+    private bool hasPlayedEntryMessage = false;
 
     void Start()
     {
@@ -68,37 +86,38 @@ public class ValveMinigame : MonoBehaviour
             initialArrowRotation = arrowPivot.localRotation;
         }
 
-        GenerateNewTask();
+        StartCrisis();
     }
 
     void Update()
     {
+        if (isFailed) return;
+
+        HandleActiveSystemLogics();
+
         bool isCurrentlyPlaying = MainPlayerController.IsPlayingMiniGame && MainPlayerController.ActiveGameType == myGameType;
 
         if (isCurrentlyPlaying && !wasPlaying)
         {
             wasPlaying = true;
-            
-            if (!hasPlayedMessage && !string.IsNullOrEmpty(entryMessage))
+            if (!hasPlayedEntryMessage && completionCount == 0 && !string.IsNullOrEmpty(entryMessage))
             {
                 if (DialogueManager.Instance != null) DialogueManager.Instance.ShowMessage(entryMessage);
-                hasPlayedMessage = true;
+                hasPlayedEntryMessage = true;
             }
         }
         else if (!isCurrentlyPlaying && wasPlaying)
         {
             wasPlaying = false;
-            hasPlayedMessage = false;
+            hasPlayedEntryMessage = false;
         }
 
-        if (isCurrentlyPlaying)
+        if (isCurrentlyPlaying && isSystemActive)
         {
-            if (!isCompleted && !isFailed) 
-            {
-                HandleValveInputs();
-                UpdateVisuals();
-            }
+            HandleValveInputs();
         }
+
+        UpdateVisuals();
 
         if (arrowPivot != null)
         {
@@ -107,14 +126,79 @@ public class ValveMinigame : MonoBehaviour
         }
     }
 
-    private void GenerateNewTask()
+    private void HandleActiveSystemLogics()
     {
-        isCompleted = false;
-        isFailed = false;
+        if (!isSystemActive) return;
+
+        pressureTimer += Time.deltaTime;
+        sabotageTimer += Time.deltaTime;
+
+        CurrentPressureRatio = Mathf.Clamp01(pressureTimer / timeToExplode);
+
+        int currentSec = Mathf.FloorToInt(pressureTimer);
+        if (currentSec != lastLoggedSecond && currentSec > 0 && currentSec % 10 == 0)
+        {
+            float timeRemaining = timeToExplode - currentSec;
+
+            Debug.Log($"<color=red>[PRESSURE SYSTEM] Time Passed: {currentSec}s | Eruption in: {timeRemaining}s</color>");
+            lastLoggedSecond = currentSec;
+        }
+
+        if (sabotageTimer >= autoSabotageInterval)
+        {
+            sabotageTimer = 0f;
+            TriggerSabotage();
+        }
+
+        CheckWarnings();
+
+        if (pressureTimer >= timeToExplode)
+        {
+            TriggerFailState();
+        }
+    }
+
+    private void CheckWarnings()
+    {
+        if (pressureTimer >= 30f && !w30) { TriggerWarning(warning30s, repeatWarning30s); w30 = true; }
+        if (pressureTimer >= 60f && !w60) { TriggerWarning(warning60s, repeatWarning60s); w60 = true; }
+        if (pressureTimer >= 80f && !w80) { TriggerWarning(warning80s, repeatWarning80s); w80 = true; }
+        if (pressureTimer >= 110f && !w110) { TriggerWarning(warning110s, repeatWarning110s); w110 = true; }
+    }
+
+    private void TriggerWarning(string firstTimeMsg, string repeatMsg)
+    {
+        if (DialogueManager.Instance == null) return;
         
+        string msg = (completionCount == 0) ? firstTimeMsg : repeatMsg;
+        if (!string.IsNullOrEmpty(msg))
+        {
+            string coloredMsg = "<color=#FFA500>" + msg + "</color>";
+            DialogueManager.Instance.ShowMessage(coloredMsg);
+        }
+    }
+
+    private void TriggerSabotage()
+    {
+        int randomValve = Random.Range(0, 3);
+        int direction = Random.value > 0.5f ? 1 : -1;
+        targetSteps[randomValve] += direction;
+    }
+
+    private void StartCrisis()
+    {
+        isSystemActive = true;
+        pressureTimer = 0f;
+        sabotageTimer = 0f;
+        CurrentPressureRatio = 0f;
+        lastLoggedSecond = -1;
+        
+        w30 = false; w60 = false; w80 = false; w110 = false;
+
         for (int i = 0; i < 3; i++)
         {
             targetDigits[i] = Random.Range(0, 10);
+            targetSteps[i] = Random.Range(1, 5); 
             UpdateDisplayMaterial(i); 
         }
         
@@ -194,8 +278,12 @@ public class ValveMinigame : MonoBehaviour
                 {
                     currentDigits[i] = currentDigit;
                     UpdateDisplayMaterial(i); 
-                    UpdateMeterTarget(); 
-                    CheckWinCondition();
+                    
+                    if (isSystemActive)
+                    {
+                        UpdateMeterTarget(); 
+                        CheckWinCondition();
+                    }
                 }
             }
         }
@@ -225,15 +313,14 @@ public class ValveMinigame : MonoBehaviour
             int difference = Mathf.Abs(currentDigits[i] - targetDigits[i]);
             int shortestPath = Mathf.Min(difference, 10 - difference);
 
+
             totalError += shortestPath;
         }
 
         float errorPercentage = totalError / 15f;
         targetArrowAngle = Mathf.Lerp(safeAngle, dangerAngle, errorPercentage);
 
-        Debug.Log($"Current -> Target:  [ {currentDigits[0]} | {currentDigits[1]} | {currentDigits[2]} ]  --->  [ {targetDigits[0]} | {targetDigits[1]} | {targetDigits[2]} ]   (Total Error: {totalError})");
-
-        if (totalError >= 15 && !isFailed && !isCompleted)
+        if (totalError >= 15 && isSystemActive)
         {
             TriggerFailState();
         }
@@ -245,15 +332,37 @@ public class ValveMinigame : MonoBehaviour
             currentDigits[1] == targetDigits[1] &&
             currentDigits[2] == targetDigits[2])
         {
-            isCompleted = true;
-            Debug.Log("<color=green>SUCCESS</color>");
+            Debug.Log("<color=green>PRESSURE STABILIZED</color>");
+            isSystemActive = false;
+            CurrentPressureRatio = 0f;
+            completionCount++;
+            StartCoroutine(WaitAndRestartRoutine());
         }
+    }
+
+    private IEnumerator WaitAndRestartRoutine()
+    {
+        targetArrowAngle = safeAngle;
+        
+        yield return new WaitForSeconds(restartDelay);
+        
+        Debug.Log("<color=yellow>NEW CRISIS STARTED</color>");
+        StartCrisis();
     }
 
     private void TriggerFailState()
     {
         isFailed = true;
-        Debug.Log("<color=red>FAIL</color>");
+        isSystemActive = false;
+        CurrentPressureRatio = 1f;
+        
+        Debug.Log("<color=red>CATASTROPHIC PRESSURE FAILURE</color>");
+        
+        if (DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.ShowMessage("HULL RUPTURE DETECTED. PRESSURE CRITICAL...");
+        }
+
         SceneTransition fader = FindObjectOfType<SceneTransition>();
         if (fader != null)
         {

@@ -21,6 +21,9 @@ public class DialogueManager : MonoBehaviour
     public float fadeSpeed = 3f; 
 
     private Coroutine activeDialogueRoutine;
+    
+    private string queuedMessage = "";
+    private bool hasQueuedMessage = false;
 
     private void Awake()
     {
@@ -40,19 +43,24 @@ public class DialogueManager : MonoBehaviour
 
     public void ShowMessage(string message)
     {
-        if (activeDialogueRoutine != null)
+        if (!IsPlaying)
         {
-            StopCoroutine(activeDialogueRoutine);
+            activeDialogueRoutine = StartCoroutine(DialogueSequence(message));
         }
-        
-        activeDialogueRoutine = StartCoroutine(DialogueSequence(message));
+        else if (!hasQueuedMessage)
+        {
+            queuedMessage = message;
+            hasQueuedMessage = true;
+        }
     }
 
     private IEnumerator DialogueSequence(string message)
     {
         IsPlaying = true;
 
-        dialogueText.text = "";
+        dialogueText.text = message;
+        dialogueText.maxVisibleCharacters = 0;
+
         while (dialogueBoxGroup.alpha < 1f)
         {
             dialogueBoxGroup.alpha += Time.deltaTime * fadeSpeed;
@@ -60,13 +68,16 @@ public class DialogueManager : MonoBehaviour
         }
         dialogueBoxGroup.alpha = 1f;
 
-        foreach (char c in message)
+        dialogueText.ForceMeshUpdate();
+        int totalVisibleCharacters = dialogueText.textInfo.characterCount;
+
+        for (int i = 0; i <= totalVisibleCharacters; i++)
         {
-            dialogueText.text += c;
+            dialogueText.maxVisibleCharacters = i;
             yield return new WaitForSeconds(typingSpeed);
         }
 
-        float waitTime = Mathf.Max(minDisplayTime, message.Length * timePerCharacter);
+        float waitTime = Mathf.Max(minDisplayTime, totalVisibleCharacters * timePerCharacter);
         yield return new WaitForSeconds(waitTime);
 
         while (dialogueBoxGroup.alpha > 0f)
@@ -76,6 +87,19 @@ public class DialogueManager : MonoBehaviour
         }
         dialogueBoxGroup.alpha = 0f;
 
-        IsPlaying = false;
+        if (hasQueuedMessage)
+        {
+            string nextMessage = queuedMessage;
+            hasQueuedMessage = false;
+            queuedMessage = "";
+            
+            yield return new WaitForSeconds(0.2f);
+            activeDialogueRoutine = StartCoroutine(DialogueSequence(nextMessage));
+        }
+        else
+        {
+            IsPlaying = false;
+            activeDialogueRoutine = null;
+        }
     }
 }

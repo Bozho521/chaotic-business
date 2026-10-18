@@ -54,7 +54,7 @@ Material:
     - _Caustics_Max: 0.2
     - _Caustics_d: 2
     - _Flow_Speed: 0.01
-    - _Inner_Fresnel_Power: 1.5
+    - _Inner_Fresnel_Power: 1
     - _Long_Fresnel_Power: 0.015
     - _Outer_Fresnel_Power: 0.03
     - _QueueControl: 0

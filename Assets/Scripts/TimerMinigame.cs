@@ -11,6 +11,9 @@ public class TimerMinigame : MonoBehaviour
     [Header("Dialogue")]
     [TextArea(2, 4)]
     public string entryMessage;
+    
+    [TextArea(2, 4)]
+    public string explosionMessage;
 
     [Header("Timer Settings")]
     public float maxTime = 60f;
@@ -71,14 +74,25 @@ public class TimerMinigame : MonoBehaviour
 
     void Update()
     {
-        if (isGameOver || isExploded) return;
+        if (isGameOver) return;
 
-        currentTime -= timeDrainRate * Time.deltaTime;
+        float currentDrain = isExploded ? (timeDrainRate) : timeDrainRate;
+        currentTime -= currentDrain * Time.deltaTime;
 
         if (currentTime <= 0f)
         {
             currentTime = 0f;
             TriggerGameOver();
+            return;
+        }
+
+        if (isExploded)
+        {
+            int currentSecond = Mathf.CeilToInt(currentTime);
+            if (currentSecond < lastFillLogSecond)
+            {
+                lastFillLogSecond = currentSecond;
+            }
         }
 
         bool isCurrentlyPlaying = MainPlayerController.IsPlayingMiniGame && MainPlayerController.ActiveGameType == myGameType;
@@ -86,7 +100,6 @@ public class TimerMinigame : MonoBehaviour
         if (isCurrentlyPlaying && !wasPlaying)
         {
             wasPlaying = true;
-            Debug.Log("<color=cyan>Hold Space to charge.</color>");
             
             if (!hasPlayedMessage && !string.IsNullOrEmpty(entryMessage))
             {
@@ -103,11 +116,18 @@ public class TimerMinigame : MonoBehaviour
 
         if (isCurrentlyPlaying)
         {
-            HandleInput();
+            if (!isExploded) 
+            {
+                HandleInput();
+            }
+            else
+            {
+                UpdateButtonVisual(false);
+            }
         }
         else
         {
-            lastFillLogSecond = Mathf.FloorToInt(currentTime);
+            if (!isExploded) lastFillLogSecond = Mathf.FloorToInt(currentTime);
         }
 
         UpdateVisuals();
@@ -157,7 +177,7 @@ public class TimerMinigame : MonoBehaviour
 
     private void CheckTenSecondInterval()
     {
-        if (currentTime > maxTime) return;
+        if (currentTime > maxTime || isExploded) return;
 
         int currentDecade = Mathf.FloorToInt(currentTime / 10f);
 
@@ -195,7 +215,7 @@ public class TimerMinigame : MonoBehaviour
             }
         }
 
-        if (o2IndicatorLine != null)
+        if (o2IndicatorLine != null && !isExploded)
         {
             float fillPercentage = Mathf.Clamp01(currentTime / maxTime);
             o2IndicatorLine.localScale = Vector3.Lerp(scaleEmpty, scaleFull, fillPercentage);
@@ -221,35 +241,17 @@ public class TimerMinigame : MonoBehaviour
         }
     }
 
-    private void TriggerGameOver()
-    {
-        isGameOver = true;
-        
-        if (timerTextDisplay != null)
-        {
-            timerTextDisplay.color = Color.red;
-            timerTextDisplay.text = "00.00";
-        }
-        
-        UpdateButtonVisual(false);
-        Debug.Log("<color=red>ERROR. Time expired</color>");
-        
-        SceneTransition fader = FindObjectOfType<SceneTransition>();
-        if (fader != null)
-        {
-            fader.LoadSceneWithFade(gameOverSceneName);
-        }
-        else
-        {
-            SceneManager.LoadScene(gameOverSceneName);
-        }
-        
-    }
-
     private void TriggerExplosion()
     {
         isExploded = true;
+        
+        if (!string.IsNullOrEmpty(explosionMessage) && DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.ShowMessage(explosionMessage);
+        }
+
         UpdateButtonVisual(false);
+        lastFillLogSecond = Mathf.FloorToInt(currentTime); 
         
         if (timerTextDisplay != null)
         {
@@ -262,6 +264,28 @@ public class TimerMinigame : MonoBehaviour
         
         if (o2IndicatorLine != null) o2IndicatorLine.gameObject.SetActive(false);
         
-        Debug.Log("<color=red>EXPLOSION</color>");
+    }
+
+    private void TriggerGameOver()
+    {
+        isGameOver = true;
+        
+        if (timerTextDisplay != null)
+        {
+            timerTextDisplay.color = Color.red;
+            timerTextDisplay.text = "00.00";
+        }
+        
+        UpdateButtonVisual(false);
+        
+        SceneTransition fader = FindObjectOfType<SceneTransition>();
+        if (fader != null)
+        {
+            fader.LoadSceneWithFade(gameOverSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(gameOverSceneName);
+        }
     }
 }

@@ -178,7 +178,12 @@ public class FixingMinigame : MonoBehaviour
         if (currentShapeIndex > 2) currentShapeIndex = 0;
         if (currentShapeIndex < 0) currentShapeIndex = 2;
 
-        currentRotIndex = 0; 
+        int maxRots = GetMaxRotations(currentShapeIndex);
+        if (currentRotIndex >= maxRots)
+        {
+            currentRotIndex = maxRots > 0 ? maxRots - 1 : 0;
+        }
+
         UpdatePlayerVisual();
     }
 

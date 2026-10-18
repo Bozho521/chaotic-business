@@ -332,7 +332,7 @@ Transform:
   m_GameObject: {fileID: 33730918}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.05, y: 1.415, z: 13.319}
+  m_LocalPosition: {x: -2.284, y: 1.0270001, z: 9.634}
   m_LocalScale: {x: 0.55, y: 0.55, z: 0.55}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -424,7 +424,7 @@ Transform:
   m_GameObject: {fileID: 109117327}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.05, y: 1.412, z: 4.873}
+  m_LocalPosition: {x: -2.284, y: 1.024, z: 3.371}
   m_LocalScale: {x: 0.55, y: 0.55, z: 0.55}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -591,7 +591,7 @@ Transform:
   m_GameObject: {fileID: 445421295}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.05, y: 1.4559999, z: 37.564003}
+  m_LocalPosition: {x: -2.512, y: 1.068, z: 21.358002}
   m_LocalScale: {x: 0.55, y: 0.55, z: 0.55}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -647,17 +647,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   mainMenuSceneName: MainMenu
-  autoMainMenuTimer: 30
+  autoMainMenuTimer: 35
   creditSprites:
   - {fileID: 2026187359}
   - {fileID: 109117328}
   - {fileID: 33730919}
   - {fileID: 1156106975}
   - {fileID: 445421296}
-  revealInterval: 10
+  revealInterval: 5
   fadeDelay: 15
   fadeDuration: 2
-  skipPromptImage: {fileID: 0}
+  skipPromptImage: {fileID: 386365019}
 --- !u!1 &1006557759
 GameObject:
   m_ObjectHideFlags: 0
@@ -808,7 +808,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ad37ba969a4e3b4b93ff543ec3f2cd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  walkSpeed: 0.5
+  walkSpeed: 1
   bobSpeed: 1
   bobAmount: 0.02
   swayAmount: 0.15
@@ -898,7 +898,7 @@ Transform:
   m_GameObject: {fileID: 1156106974}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.05, y: 1.481, z: 25.143}
+  m_LocalPosition: {x: -2.512, y: 1.093, z: 14.97}
   m_LocalScale: {x: 0.55, y: 0.55, z: 0.55}
   m_ConstrainProportionsScale: 1
   m_Children: []

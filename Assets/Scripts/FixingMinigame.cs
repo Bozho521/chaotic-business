@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class FixingMinigame : MonoBehaviour
 {
@@ -24,6 +25,9 @@ public class FixingMinigame : MonoBehaviour
 
     [Header("Mechanics")]
     public float timeToRepair = 3f; 
+    
+    [Header("Completion Logic")]
+    public string creditsSceneName = "Credits";
     
     private int[] holesPerStage = { 2, 4, 6 };
     private int currentStageIndex = 0;
@@ -331,6 +335,16 @@ public class FixingMinigame : MonoBehaviour
         isCompleted = true;
         if (playerShapeDisplay != null) playerShapeDisplay.gameObject.SetActive(false);
         Debug.Log("<color=green>ALL STAGES CLEARED!</color>");
+
+        SceneTransition fader = FindObjectOfType<SceneTransition>();
+        if (fader != null)
+        {
+            fader.LoadSceneWithFade(creditsSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(creditsSceneName);
+        }
     }
 
     private int GetMaxRotations(int shapeIndex)
